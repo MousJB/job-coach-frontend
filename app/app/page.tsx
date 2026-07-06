@@ -133,7 +133,6 @@ export default function Home() {
                 </p>
                 
                 
-                <p className="text-xs text-slate-400 mt-1">{result.matched_skills.length} compétence{result.matched_skills.length > 1 ? "s" : ""} matchée{result.matched_skills.length > 1 ? "s" : ""}</p>
               </div>
             </div>
 
