@@ -127,7 +127,13 @@ export default function Home() {
               <div className="text-center">
                 <p className="text-sm text-slate-400 font-medium uppercase tracking-wide">Score ATS</p>
                 <p className="text-5xl font-extrabold text-green-600">{result.score_before}%</p>
-                <p className="text-xs text-slate-400 mt-1">{result.matched_skills.length} compétences matchées</p>
+                <p className="text-xs text-slate-400 mt-1">{result.matched_skills.length} compétence{result.matched_skills.length > 1 ? "s" : ""} matchée{result.matched_skills.length > 1 ? "s" : ""}</p>
+                <p className={`text-sm font-semibold mt-2 ${result.score_before >= 70 ? "text-green-600" : result.score_before >= 50 ? "text-orange-500" : "text-red-500"}`}>
+                {result.score_before >= 70 ? "✅ Bon match" : result.score_before >= 50 ? "⚠️ Match partiel" : "❌ Offre peu adaptée à votre profil"}
+                </p>
+                
+                
+                <p className="text-xs text-slate-400 mt-1">{result.matched_skills.length} compétence{result.matched_skills.length > 1 ? "s" : ""} matchée{result.matched_skills.length > 1 ? "s" : ""}</p>
               </div>
             </div>
 
