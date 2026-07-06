@@ -16,7 +16,7 @@ export default function Home() {
     setResult(null);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/optimize", {
+      const response = await fetch("https://job-coach-ai-ncv3.onrender.com/optimize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cv_text: cvText, job_text: jobText }),
