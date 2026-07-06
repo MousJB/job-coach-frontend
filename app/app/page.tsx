@@ -1,210 +1,227 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-export default function Landing() {
-  const router = useRouter();
+export default function Home() {
+  const [cvText, setCvText] = useState("");
+  const [jobText, setJobText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState("");
+
+  const handleOptimize = async () => {
+    setLoading(true);
+    setError("");
+    setResult(null);
+
+    try {
+      const response = await fetch("https://job-coach-ai-ncv3.onrender.com/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cv_text: cvText, job_text: jobText }),
+      });
+
+      if (!response.ok) throw new Error("Erreur lors de l'optimisation");
+
+      const data = await response.json();
+      setResult(data);
+      localStorage.setItem("cv_result", JSON.stringify(data.cv_rewritten));
+      localStorage.setItem("letter_result", JSON.stringify(data.letter));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = (text: string, type: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(type);
+    setTimeout(() => setCopied(""), 2000);
+  };
 
   return (
-    <main className="min-h-screen bg-white font-sans">
+    <main className="min-h-screen bg-slate-50 p-8 font-sans">
+      <div className="max-w-6xl mx-auto">
 
-      {/* NAV */}
-      <nav className="flex justify-between items-center px-8 py-5 border-b border-slate-100">
-        <div className="text-xl font-extrabold text-slate-900">
-          Job Coach <span className="text-blue-600">AI</span>
-        </div>
-        <button
-          onClick={() => router.push("/app")}
-          className="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-        >
-          Essayer gratuitement
-        </button>
-      </nav>
+        {/* Header */}
+        <header className="mb-12 text-center">
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+            Job Coach <span className="text-blue-600">AI</span> 🚀
+          </h1>
+          <p className="text-slate-500 mt-2 text-lg">
+            Adaptez votre candidature en moins de 30 secondes.
+          </p>
+        </header>
 
-      {/* HERO */}
-      <section className="max-w-4xl mx-auto px-8 pt-24 pb-20 text-center">
-        <div className="inline-block bg-blue-50 text-blue-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-          ✨ Optimisé par IA — Résultat en 30 secondes
-        </div>
-        <h1 className="text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-6">
-          Votre candidature,<br />
-          <span className="text-blue-600">adaptée à chaque offre.</span>
-        </h1>
-        <p className="text-xl text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">
-          Collez votre CV et l'offre d'emploi. Notre IA analyse, optimise et génère 
-          une candidature personnalisée avec score ATS, CV réécrit et lettre de motivation — en moins de 30 secondes.
-        </p>
-        <div className="flex gap-4 justify-center flex-wrap">
-          <button
-              onClick={() => router.push("/app")}
-              className="bg-blue-600 text-white font-bold py-4 px-10 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 text-lg"
-            >
-              Optimiser ma candidature ✨
-            </button>
-
-            <a
-              href="#how-it-works"
-              className="bg-slate-100 text-slate-700 font-semibold py-4 px-8 rounded-xl hover:bg-slate-200 transition-colors text-lg"
-            >
-              Comment ça marche ?
-            </a>
-        </div>
-      </section>
-
-      {/* BEFORE / AFTER */}
-      <section className="bg-slate-50 py-20">
-        <div className="max-w-4xl mx-auto px-8">
-          <h2 className="text-3xl font-bold text-slate-900 text-center mb-12">
-            Avant / Après en un coup d'œil
-          </h2>
+        {/* Formulaire */}
+        {!result && (
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-2xl p-6 border border-slate-200">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">😓</span>
-                <span className="font-bold text-slate-700">Avant</span>
-                <span className="ml-auto bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">Score ATS : 42%</span>
-              </div>
-              <p className="text-sm text-slate-500 italic leading-relaxed">
-                "Développeur web avec 5 ans d'expérience. Maîtrise de JavaScript, React et Node.js. Passionné par les nouvelles technologies..."
-              </p>
-              <div className="mt-4 text-xs text-slate-400">❌ Lettre générique · ❌ Mots-clés manquants · ❌ Non adapté à l'offre</div>
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                1. Collez votre CV
+              </label>
+              <textarea
+                className="w-full h-72 p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm text-slate-800 bg-slate-50"
+                value={cvText}
+                onChange={(e) => setCvText(e.target.value)}
+                placeholder="Copiez-collez le texte intégral de votre CV ici..."
+              />
             </div>
-            <div className="bg-white rounded-2xl p-6 border-2 border-blue-200">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">🚀</span>
-                <span className="font-bold text-slate-700">Après</span>
-                <span className="ml-auto bg-green-100 text-green-600 text-xs font-bold px-3 py-1 rounded-full">Score ATS : 91%</span>
-              </div>
-              <p className="text-sm text-slate-700 leading-relaxed">
-                "Développeur Full Stack Senior avec 5 ans d'expérience en React, TypeScript et FastAPI. Expert en déploiement Docker et CI/CD GitHub Actions. Intégration OpenAI sur plateforme SaaS..."
-              </p>
-              <div className="mt-4 text-xs text-green-600">✅ Lettre personnalisée · ✅ 11 mots-clés ATS · ✅ Adapté à l'offre</div>
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                2. Collez l'offre d'emploi
+              </label>
+              <textarea
+                className="w-full h-72 p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm text-slate-800 bg-slate-50"
+                value={jobText}
+                onChange={(e) => setJobText(e.target.value)}
+                placeholder="Copiez-collez le texte de l'offre d'emploi ici..."
+              />
+            </div>
+            <div className="md:col-span-2 text-center">
+              <button
+                onClick={handleOptimize}
+                disabled={loading || !cvText || !jobText}
+                className="bg-blue-600 text-white font-bold py-4 px-10 rounded-xl hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2 justify-center">
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Optimisation en cours...
+                  </span>
+                ) : (
+                  "Optimiser ma candidature ✨"
+                )}
+              </button>
+              {error && <p className="text-red-500 mt-4 font-medium">{error}</p>}
             </div>
           </div>
-        </div>
-      </section>
+        )}
 
-      {/* HOW IT WORKS */}
-      <section id="how-it-works" className="py-20 max-w-4xl mx-auto px-8">
-        <h2 className="text-3xl font-bold text-slate-900 text-center mb-12">
-          Comment ça marche ?
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
-              📋
-            </div>
-            <h3 className="font-bold text-slate-800 mb-2">1. Collez votre CV</h3>
-            <p className="text-sm text-slate-500">Copiez-collez le texte de votre CV. Pas besoin d'upload.</p>
-          </div>
-          <div className="text-center">
-            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
-              🎯
-            </div>
-            <h3 className="font-bold text-slate-800 mb-2">2. Collez l'offre</h3>
-            <p className="text-sm text-slate-500">Ajoutez le texte de l'offre d'emploi ciblée.</p>
-          </div>
-          <div className="text-center">
-            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
-              ✨
-            </div>
-            <h3 className="font-bold text-slate-800 mb-2">3. Obtenez votre candidature</h3>
-            <p className="text-sm text-slate-500">Score ATS, CV optimisé, lettre personnalisée — en 30 secondes.</p>
-          </div>
-        </div>
-      </section>
+        {/* Résultats */}
+        {result && (
+          <div className="space-y-8">
 
-      {/* FEATURES */}
-      <section className="bg-slate-50 py-20">
-        <div className="max-w-4xl mx-auto px-8">
-          <h2 className="text-3xl font-bold text-slate-900 text-center mb-12">
-            Pourquoi pas ChatGPT ?
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              { icon: "🎯", title: "Score ATS précis", desc: "Analyse les mots-clés de l'offre et calcule votre taux de compatibilité réel." },
-              { icon: "✍️", title: "CV réécrit intelligemment", desc: "Réorganise et enrichit vos expériences selon les priorités de l'offre." },
-              { icon: "💌", title: "Lettre 100% personnalisée", desc: "Générée spécifiquement pour l'entreprise et le poste ciblé." },
-              { icon: "🛡️", title: "Détection d'hallucinations", desc: "Vérifie que rien n'a été inventé. Votre candidature reste honnête." },
-              { icon: "✏️", title: "Mode édition", desc: "Modifiez le CV et la lettre directement avant de télécharger." },
-              { icon: "📄", title: "Export PDF propre", desc: "Téléchargez un CV et une lettre prêts à envoyer en un clic." },
-            ].map((f, i) => (
-              <div key={i} className="bg-white rounded-xl p-5 border border-slate-200 flex gap-4">
-                <span className="text-2xl flex-shrink-0">{f.icon}</span>
-                <div>
-                  <h3 className="font-bold text-slate-800 mb-1">{f.title}</h3>
-                  <p className="text-sm text-slate-500">{f.desc}</p>
+            <div className="text-right">
+              <button
+                onClick={() => setResult(null)}
+                className="text-slate-500 hover:text-slate-800 font-medium text-sm transition-colors"
+              >
+                ← Faire une nouvelle optimisation
+              </button>
+            </div>
+
+            {/* Score */}
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="text-center md:text-left">
+                <h2 className="text-2xl font-bold text-slate-800">Rapport d'optimisation</h2>
+                <p className={`mt-2 font-medium ${result.quality.approved ? "text-green-600" : "text-orange-600"}`}>
+                  {result.summary_for_user}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-slate-400 font-medium uppercase tracking-wide">Score ATS</p>
+                <p className="text-5xl font-extrabold text-green-600">{result.score_before}%</p>
+                <p className="text-xs text-slate-400 mt-1">{result.matched_skills.length} compétence{result.matched_skills.length > 1 ? "s" : ""} matchée{result.matched_skills.length > 1 ? "s" : ""}</p>
+                <p className={`text-sm font-semibold mt-2 ${result.score_before >= 70 ? "text-green-600" : result.score_before >= 50 ? "text-orange-500" : "text-red-500"}`}>
+                {result.score_before >= 70 ? "✅ Bon match" : result.score_before >= 50 ? "⚠️ Match partiel" : "❌ Offre peu adaptée à votre profil"}
+                </p>
+                
+                
+                <p className="text-xs text-slate-400 mt-1">{result.matched_skills.length} compétence{result.matched_skills.length > 1 ? "s" : ""} matchée{result.matched_skills.length > 1 ? "s" : ""}</p>
+              </div>
+            </div>
+
+            {/* CV & Lettre */}
+            <div className="grid md:grid-cols-2 gap-8">
+
+              {/* CV Optimisé */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-lg text-slate-800">CV Optimisé</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleCopy(result.cv_rewritten.summary + "\n\n" + result.cv_rewritten.skills.join(", "), "cv")}
+                      className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-3 rounded-lg transition-colors"
+                    >
+                      {copied === "cv" ? "✓ Copié !" : "Copier"}
+                    </button>
+                    <button
+                      onClick={() => window.open("/cv", "_blank")}
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-3 rounded-lg transition-colors"
+                    >
+                      Télécharger PDF
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-xl text-sm text-slate-700 space-y-4 h-96 overflow-y-auto">
+                  <p className="font-medium text-slate-900 border-l-4 border-blue-500 pl-3 italic">
+                    {result.cv_rewritten.summary}
+                  </p>
+                  <div>
+                    <p className="font-semibold text-slate-800 mb-2">Compétences clés :</p>
+                    <div className="flex flex-wrap gap-2">
+                      {result.cv_rewritten.skills.map((skill: string, i: number) => (
+                        <span key={i} className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* PRICING */}
-      <section className="py-20 max-w-4xl mx-auto px-8 text-center">
-        <h2 className="text-3xl font-bold text-slate-900 mb-4">Tarifs simples</h2>
-        <p className="text-slate-500 mb-12">Commencez gratuitement. Passez pro quand vous êtes convaincu.</p>
-        <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-          <div className="bg-white rounded-2xl p-8 border border-slate-200">
-            <div className="text-lg font-bold text-slate-700 mb-2">Gratuit</div>
-            <div className="text-4xl font-extrabold text-slate-900 mb-1">€0</div>
-            <div className="text-slate-400 text-sm mb-6">pour toujours</div>
-            <ul className="text-sm text-slate-600 space-y-2 text-left mb-8">
-              <li>✓ 3 optimisations/mois</li>
-              <li>✓ Score ATS</li>
-              <li>✓ CV optimisé</li>
-              <li>✓ Lettre de motivation</li>
-            </ul>
-            <button
-              onClick={() => router.push("/app")}
-              className="w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-200 transition-colors"
-            >
-              Commencer gratuitement
-            </button>
-          </div>
-          <div className="bg-blue-600 rounded-2xl p-8 border border-blue-600 text-white relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-400 text-white text-xs font-bold px-3 py-1 rounded-full">
-              Le plus populaire
+              {/* Lettre */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-lg text-slate-800">Lettre de Motivation</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleCopy(result.letter.body, "letter")}
+                      className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-3 rounded-lg transition-colors"
+                    >
+                      {copied === "letter" ? "✓ Copié !" : "Copier"}
+                    </button>
+                    <button
+                      onClick={() => window.open("/letter", "_blank")}
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-3 rounded-lg transition-colors"
+                    >
+                      Télécharger PDF
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-xl text-sm text-slate-700 whitespace-pre-wrap h-96 overflow-y-auto font-serif leading-relaxed">
+                  {result.letter.body}
+                </div>
+              </div>
             </div>
-            <div className="text-lg font-bold mb-2 opacity-90">Pro</div>
-            <div className="text-4xl font-extrabold mb-1">€14.90</div>
-            <div className="opacity-70 text-sm mb-6">par mois</div>
-            <ul className="text-sm space-y-2 text-left mb-8 opacity-90">
-              <li>✓ Optimisations illimitées</li>
-              <li>✓ Export PDF premium</li>
-              <li>✓ Mode édition</li>
-              <li>✓ Détection d'hallucinations</li>
-              <li>✓ Historique des candidatures</li>
-            </ul>
-            <button
-              onClick={() => router.push("/app")}
-              className="w-full bg-white text-blue-600 font-bold py-3 rounded-xl hover:bg-blue-50 transition-colors"
-            >
-              Essayer gratuitement
-            </button>
+
+            {/* Alerte Qualité */}
+            {!result.quality.approved && (
+              <div className="bg-orange-50 border-l-4 border-orange-400 p-6 rounded-r-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-2xl">⚠️</span>
+                  <h3 className="font-bold text-orange-800 text-lg">Points à vérifier</h3>
+                </div>
+                <p className="text-orange-700 text-sm mb-4">
+                  L'IA a repéré ces éléments. Vérifiez qu'ils correspondent bien à votre réalité professionnelle :
+                </p>
+                <ul className="list-disc list-inside space-y-2 text-orange-700 text-sm font-medium bg-white/50 p-4 rounded-lg">
+                  {result.quality.hallucinations_detected.map((h: string, i: number) => (
+                    <li key={i}>{h}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
           </div>
-        </div>
-      </section>
-
-      {/* CTA FINAL */}
-      <section className="bg-blue-600 py-20 text-center text-white">
-        <h2 className="text-3xl font-bold mb-4">Prêt à décrocher plus d'entretiens ?</h2>
-        <p className="text-blue-100 mb-8 text-lg">Rejoignez les candidats qui optimisent leur candidature en 30 secondes.</p>
-        <button
-          onClick={() => router.push("/app")}
-          className="bg-white text-blue-600 font-bold py-4 px-10 rounded-xl hover:bg-blue-50 transition-colors text-lg shadow-lg"
-        >
-          Optimiser ma candidature gratuitement ✨
-        </button>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="border-t border-slate-100 py-8 text-center text-slate-400 text-sm">
-        <div className="font-bold text-slate-600 mb-1">Job Coach AI</div>
-        Optimisez votre candidature avec l'intelligence artificielle.
-      </footer>
-
+        )}
+      </div>
     </main>
   );
 }
