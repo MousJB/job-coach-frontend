@@ -2,11 +2,23 @@
 
 import { useEffect, useState } from "react";
 
+// Fonction utilitaire pour convertir un niveau textuel en points ●●●○○
+const getLanguageDots = (level: string) => {
+  const l = level?.toLowerCase() || "";
+  let score = 3; // Par défaut
+  if (l.includes("c2") || l.includes("maternel") || l.includes("native")) score = 5;
+  else if (l.includes("c1") || l.includes("bilingue") || l.includes("fluent")) score = 4;
+  else if (l.includes("b2") || l.includes("courant")) score = 3;
+  else if (l.includes("b1") || l.includes("intermédiaire")) score = 2;
+  else if (l.includes("a1") || l.includes("a2") || l.includes("débutant")) score = 1;
+
+  return "●".repeat(score) + "○".repeat(5 - score);
+};
+
 export default function CVPage() {
   const [cv, setCv] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [editedCv, setEditedCv] = useState<any>(null);
-  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("cv_result");
@@ -15,15 +27,7 @@ export default function CVPage() {
       setCv(parsed);
       setEditedCv(JSON.parse(JSON.stringify(parsed)));
     }
-    const theme = localStorage.getItem("theme");
-    if (theme === "dark") setDarkMode(true);
   }, []);
-
-  const toggleDarkMode = () => {
-    const next = !darkMode;
-    setDarkMode(next);
-    localStorage.setItem("theme", next ? "dark" : "light");
-  };
 
   const handleSave = () => {
     setCv(JSON.parse(JSON.stringify(editedCv)));
@@ -36,8 +40,16 @@ export default function CVPage() {
     setEditing(false);
   };
 
-  const updateSummary = (val: string) => setEditedCv({ ...editedCv, summary: val });
+  const downloadPDF = () => {
+    document.body.classList.add("printing");
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove("printing");
+    }, 500);
+  };
 
+  const updateSummary = (val: string) => setEditedCv({ ...editedCv, summary: val });
+  
   const updateExpDesc = (i: number, val: string) => {
     const exps = [...editedCv.experiences];
     exps[i] = { ...exps[i], description: val };
@@ -64,595 +76,338 @@ export default function CVPage() {
   const display = editing ? editedCv : cv;
   const initials = `${display.first_name?.[0] || ""}${display.last_name?.[0] || ""}`.toUpperCase();
 
+  const renderDescriptionAsPoints = (desc: string) => {
+    if (!desc) return null;
+    const lines = desc.split(/[\n•-]/).map(l => l.trim()).filter(Boolean);
+    if (lines.length <= 1) return <p className="job-desc">{desc}</p>;
+    return (
+      <ul className="job-points">
+        {lines.map((line, idx) => <li key={idx}>{line}</li>)}
+      </ul>
+    );
+  };
+
   return (
-    <div className={darkMode ? "dark" : ""}>
+    <div>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #f3f4f6; }
 
         .cv-wrapper {
-          background: #f1f5f9;
           min-height: 100vh;
-          transition: background 0.2s;
+          padding-bottom: 40px;
         }
-        .dark .cv-wrapper { background: #0f172a; }
 
         /* TOOLBAR */
         .cv-toolbar {
           background: white;
-          border-bottom: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e5e7eb;
           position: sticky;
           top: 0;
           z-index: 50;
-          transition: background 0.2s;
         }
-        .dark .cv-toolbar { background: #1e293b; border-color: #334155; }
-
         .cv-toolbar-inner {
-          max-width: 900px;
+          max-width: 1200px;
           margin: 0 auto;
-          padding: 0 16px;
+          padding: 0 24px;
           height: 64px;
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
+        .toolbar-brand { font-weight: 700; font-size: 16px; color: #1e3a8a; display: flex; align-items: center; gap: 8px; }
+        .toolbar-actions { display: flex; align-items: center; gap: 12px; }
 
-        .toolbar-brand {
-          font-weight: 700;
-          font-size: 16px;
-          color: #0369a1;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .dark .toolbar-brand { color: #e0f2fe; }
+        .btn-print { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .btn-print:hover { background: #172554; }
+        .btn-edit { display: flex; align-items: center; gap: 6px; padding: 10px 20px; background: white; color: #1e3a8a; border: 1.5px solid #1e3a8a; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .btn-save { padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .btn-cancel { padding: 10px 16px; background: white; color: #4b5563; border: 1.5px solid #d1d5db; border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; }
+        .btn-back { background: none; border: none; color: #6b7280; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 
-        .toolbar-actions { display: flex; align-items: center; gap: 10px; }
+        .edit-banner { max-width: 1200px; margin: 16px auto 0; padding: 12px 24px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; font-size: 14px; color: #1e40af; }
 
-        .btn-dark {
-          padding: 8px;
-          border-radius: 8px;
-          background: #f1f5f9;
-          border: none;
-          cursor: pointer;
-          font-size: 16px;
-          transition: background 0.2s;
-        }
-        .dark .btn-dark { background: #334155; }
-
-        .btn-print {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 18px;
-          background: #0284c7;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 13px;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        .btn-print:hover { background: #0369a1; }
-
-        .btn-edit {
-          padding: 8px 18px;
-          background: white;
-          color: #0284c7;
-          border: 1.5px solid #0284c7;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 13px;
-          cursor: pointer;
-        }
-        .dark .btn-edit { background: #1e293b; color: #7dd3fc; border-color: #7dd3fc; }
-
-        .btn-save {
-          padding: 8px 18px;
-          background: #16a34a;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 13px;
-          cursor: pointer;
-        }
-
-        .btn-cancel {
-          padding: 8px 14px;
-          background: white;
-          color: #64748b;
-          border: 1.5px solid #e2e8f0;
-          border-radius: 8px;
-          font-weight: 500;
-          font-size: 13px;
-          cursor: pointer;
-        }
-
-        .btn-back {
-          background: none;
-          border: none;
-          color: #64748b;
-          font-size: 13px;
-          cursor: pointer;
-          font-family: 'Inter', sans-serif;
-        }
-
-        .edit-banner {
-          max-width: 900px;
-          margin: 16px auto 0;
-          padding: 10px 16px;
-          background: #eff6ff;
-          border: 1.5px solid #bfdbfe;
-          border-radius: 8px;
-          font-size: 13px;
-          color: #1e40af;
-        }
-
-        /* CV CONTAINER */
+        /* CARD FORMAT A4 */
         .cv-container {
-          max-width: 900px;
-          margin: 32px auto;
-          padding: 0 16px 48px;
+          display: flex;
+          justify-content: center;
+          padding: 30px;
         }
 
         .cv-card {
+          width: 210mm;
+          min-height: 297mm;
+          height: auto;
           background: white;
-          border-radius: 16px;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-          border: 1px solid #f1f5f9;
-          overflow: hidden;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        .dark .cv-card { background: #1e293b; border-color: #334155; }
-
-        /* HEADER */
-        .cv-head {
-          background: linear-gradient(135deg, #0c4a6e 0%, #075985 50%, #1e293b 100%);
-          padding: 40px 48px;
-          color: white;
-          position: relative;
-          overflow: hidden;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-
-        .cv-head-pattern {
-          position: absolute;
-          inset: 0;
-          opacity: 0.08;
-          background-image: radial-gradient(#fff 1px, transparent 1px);
-          background-size: 16px 16px;
-        }
-
-        .cv-head-content {
-          position: relative;
+          box-shadow: 0 10px 35px rgba(0,0,0,.1);
           display: flex;
-          align-items: center;
-          gap: 28px;
+          flex-direction: column;
         }
 
-        .cv-avatar {
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.15);
-          border: 3px solid rgba(255,255,255,0.3);
+        /* BANDEAU HAUT (HEADER) */
+        .cv-head {
+          background: #0f172a !important; /* Bleu très foncé premium */
+          padding: 32px 40px;
+          color: white !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        .cv-head-content { display: flex; align-items: center; gap: 24px; }
+        
+        .cv-avatar-box {
+          width: 90px;
+          height: 90px;
+          border-radius: 8px; /* Plus moderne qu'un rond parfait */
+          background: #1e293b !important;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 28px;
+          font-size: 32px;
           font-weight: 700;
-          color: white;
+          color: #f8fafc !important;
           flex-shrink: 0;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          overflow: hidden;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
+        .cv-avatar-img { width: 100%; height: 100%; object-fit: cover; }
 
         .cv-head-info { flex: 1; }
-
-        .cv-head-badge {
-          display: inline-block;
-          padding: 3px 12px;
-          background: rgba(255,255,255,0.12);
-          border-radius: 20px;
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: #bae6fd;
-          margin-bottom: 8px;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+        
+        .cv-head-name { 
+          font-size: 38px; 
+          font-weight: 800; 
+          color: #ffffff !important; 
+          margin-bottom: 4px;
+          letter-spacing: -0.02em;
+        }
+        
+        .cv-head-title {
+          font-size: 18px;
+          font-weight: 500;
+          color: #94a3b8 !important;
+          margin-bottom: 16px;
         }
 
-        .cv-head-name {
-          font-size: 28px;
-          font-weight: 700;
-          letter-spacing: -0.5px;
-          margin-bottom: 8px;
-        }
+        .cv-head-contacts { display: flex; flex-wrap: wrap; gap: 16px; }
+        .cv-head-contact { font-size: 13px; color: #cbd5e1 !important; display: flex; align-items: center; gap: 6px; }
+        .cv-head-contact svg { width: 14px; height: 14px; stroke: #94a3b8; }
+        .cv-head-contact a { color: inherit; text-decoration: none; }
 
-        .cv-head-contacts {
+        /* COLONNES */
+        /* --- LAYOUT 2 COLONNES --- */
+        .cv-body {
           display: flex;
-          flex-wrap: wrap;
-          gap: 16px;
-          margin-top: 8px;
+          flex-direction: row;
+          padding: 40px;
+          gap: 40px;
+          flex: 1;
         }
 
-        .cv-head-contact {
-          font-size: 12px;
-          color: #bae6fd;
-          display: flex;
-          align-items: center;
-          gap: 5px;
-        }
-
-        .cv-head-contact a { color: #7dd3fc; text-decoration: none; }
-
-        /* GRID */
-        .cv-grid {
-          display: grid;
-          grid-template-columns: 1fr 220px;
-          border-top: 1px solid #e2e8f0;
-        }
-        .dark .cv-grid { border-color: #334155; }
-
-        /* MAIN */
         .cv-main {
-          padding: 28px 32px;
-          border-right: 1px solid #e2e8f0;
+          flex: 2; /* Prend environ 66% de la largeur */
+          min-width: 0; /* Empilement correct si le texte est long */
         }
-        .dark .cv-main { border-color: #334155; }
 
-        /* SIDEBAR */
         .cv-sidebar {
-          padding: 28px 20px;
-          background: #f8fafc;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        .dark .cv-sidebar { background: #162032; }
-
-        /* SECTIONS */
-        .section { margin-bottom: 24px; }
-
-        .section-head {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: #0369a1;
-          margin-bottom: 14px;
-          padding-bottom: 8px;
-          border-bottom: 2px solid #e0f2fe;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        .dark .section-head { color: #38bdf8; border-color: #1e3a5f; }
-
-        .section-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #0284c7;
-          flex-shrink: 0;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          flex: 1; /* Prend environ 33% de la largeur */
+          min-width: 0;
         }
 
-        /* SUMMARY */
-        .cv-summary {
-          font-size: 13px;
-          line-height: 1.7;
-          color: #475569;
-        }
-        .dark .cv-summary { color: #94a3b8; }
-
-        /* TIMELINE */
-        .timeline { border-left: 2px solid #e2e8f0; margin-left: 8px; }
-        .dark .timeline { border-color: #334155; }
-
-        .timeline-item {
-          position: relative;
-          padding: 0 0 20px 20px;
-        }
-
-        .timeline-dot {
-          position: absolute;
-          left: -6px;
-          top: 4px;
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: #0284c7;
-          border: 2px solid white;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        .dark .timeline-dot { border-color: #1e293b; }
-
-        .timeline-dot.past { background: #94a3b8; }
-
-        .timeline-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 2px;
-          flex-wrap: wrap;
-          gap: 4px;
-        }
-
-        .timeline-title {
-          font-size: 14px;
-          font-weight: 700;
-          color: #0f172a;
-        }
-        .dark .timeline-title { color: #f1f5f9; }
-
-        .timeline-badge {
-          font-size: 10px;
-          font-weight: 600;
-          padding: 2px 10px;
-          border-radius: 20px;
-          background: #e0f2fe;
-          color: #0369a1;
-          white-space: nowrap;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-
-        .timeline-badge.past {
-          background: #f1f5f9;
-          color: #64748b;
-        }
-        .dark .timeline-badge { background: #1e3a5f; color: #38bdf8; }
-        .dark .timeline-badge.past { background: #1e293b; color: #94a3b8; }
-
-        .timeline-company {
-          font-size: 12px;
-          font-weight: 500;
-          color: #0284c7;
-          margin-bottom: 6px;
-        }
-        .dark .timeline-company { color: #38bdf8; }
-
-        .timeline-desc {
-          font-size: 12px;
-          line-height: 1.6;
-          color: #475569;
-        }
-        .dark .timeline-desc { color: #94a3b8; }
-
-        .exp-tags {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 4px;
-          margin-top: 8px;
-        }
-
-        .exp-tag {
-          font-size: 10px;
-          background: #eff6ff;
-          color: #1d4ed8;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-weight: 500;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        .dark .exp-tag { background: #1e3a5f; color: #7dd3fc; }
-
-        /* SIDEBAR ITEMS */
-        .skill-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 8px;
-          font-size: 12px;
-          color: #334155;
-        }
-        .dark .skill-item { color: #cbd5e1; }
-
-        .skill-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #0284c7;
-          flex-shrink: 0;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-
-        .edu-item { margin-bottom: 14px; }
-
-        .edu-degree {
-          font-size: 12px;
-          font-weight: 600;
-          color: #0f172a;
-        }
-        .dark .edu-degree { color: #f1f5f9; }
-
-        .edu-school {
-          font-size: 11px;
-          color: #0284c7;
-          margin-top: 1px;
-        }
-
-        .edu-year {
-          font-size: 11px;
-          color: #94a3b8;
-          margin-top: 1px;
-        }
-
-        .lang-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-          font-size: 12px;
-          font-weight: 500;
-          color: #334155;
-        }
-        .dark .lang-item { color: #cbd5e1; }
-
-        .lang-badge {
-          font-size: 10px;
-          padding: 2px 8px;
-          border-radius: 4px;
-          background: #e0f2fe;
-          color: #0369a1;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        .dark .lang-badge { background: #1e3a5f; color: #38bdf8; }
-
-        /* EDIT */
-        .editable-textarea {
-          width: 100%;
-          font-size: 12px;
-          line-height: 1.6;
-          color: #334155;
-          border: 1.5px solid #7dd3fc;
-          border-radius: 6px;
-          padding: 8px 10px;
-          font-family: 'Inter', sans-serif;
-          resize: vertical;
-          outline: none;
-          background: #f0f9ff;
-          min-height: 70px;
-        }
-
-        .editable-input {
-          font-size: 12px;
-          color: #334155;
-          border: 1.5px solid #7dd3fc;
-          border-radius: 4px;
-          padding: 4px 8px;
-          font-family: 'Inter', sans-serif;
-          outline: none;
-          background: #f0f9ff;
-          width: calc(100% - 28px);
-        }
-
-        .skill-edit-row {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          margin-bottom: 6px;
-        }
-
-        .btn-remove-skill {
-          background: none;
-          border: none;
-          color: #ef4444;
-          cursor: pointer;
-          font-size: 16px;
-          padding: 0;
-          line-height: 1;
-          flex-shrink: 0;
-        }
-
-        /* FOOTER */
-        .cv-footer {
-          background: #f8fafc;
-          border-top: 1px solid #e2e8f0;
-          text-align: center;
-          padding: 16px;
-          font-size: 11px;
-          color: #94a3b8;
-        }
-        .dark .cv-footer { background: #162032; border-color: #334155; }
-
-        /* PRINT */
+        /* En mode impression ou petit écran, on garde l'espacement proportionnel */
         @media print {
-          @page { size: A4; margin: 8mm; }
-          html, body { width: 210mm; background: white; }
-          .cv-toolbar { display: none; }
-          .edit-banner { display: none; }
-          .cv-wrapper { background: white; }
-          .cv-container { margin: 0; padding: 0; max-width: 100%; }
-          .cv-card { box-shadow: none; border-radius: 0; border: none; }
-          .cv-head { padding: 24px 32px; }
-          .cv-main { padding: 16px 20px; }
-          .cv-sidebar { padding: 16px 14px; }
-          .cv-head-name { font-size: 22px; }
-          .cv-summary, .timeline-desc, .skill-item, .edu-degree, .lang-item { font-size: 10px; line-height: 1.3; }
-          .timeline-title { font-size: 12px; }
-          .section { margin-bottom: 16px; }
-          .timeline-item { padding-bottom: 12px; }
-          .editable-textarea, .editable-input { border: none; background: transparent; padding: 0; resize: none; }
-          .btn-remove-skill { display: none; }
+          .cv-body {
+            padding: 30px;
+            gap: 30px;
+          }
+        }
+
+        /* IMPRESSION A4 */
+        @media print {
+          @page { size: A4; margin: 0; }
+          html, body { background: white; }
+          .cv-wrapper { padding: 0 !important; }
+          .cv-container { padding: 0; margin: 0; }
+          
+          .cv-card {
+            width: 100%; /* FIX : Évite les conflits de marges de l'imprimante */
+            max-width: 210mm;
+            min-height: 297mm;
+            height: auto;
+            box-shadow: none;
+            border-radius: 0;
+          }
+          
+          /* Évite de couper une expérience ou une section en plein milieu */
+          .section, .job-item, .capsule-container { 
+            page-break-inside: avoid; 
+            break-inside: avoid; 
+          }
+        }
+
+        .section { margin-bottom: 28px; }
+        .section-head {
+          font-size: 15px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: #0f172a !important;
+          margin-bottom: 16px;
+          padding-bottom: 4px;
+          border-bottom: 2px solid #e2e8f0 !important;
+        }
+
+        .cv-summary { font-size: 14px; line-height: 1.6; color: #334155 !important; }
+
+        /* EXPERIENCES (Sans timeline, style Word/Canva propre) */
+        .job-item { margin-bottom: 24px; }
+        .job-item:last-child { margin-bottom: 0; }
+        
+        .job-header { 
+          display: grid; 
+          grid-template-columns: 1fr auto; 
+          align-items: baseline;
+          margin-bottom: 4px;
+        }
+        
+        .job-title { font-size: 16px; font-weight: 700; color: #0f172a !important; }
+        .job-date { font-size: 13px; font-weight: 500; color: #64748b !important; }
+        
+        .job-company { font-size: 14px; font-weight: 600; color: #3b82f6 !important; margin-bottom: 8px; }
+        
+        .job-desc { font-size: 13.5px; line-height: 1.6; color: #334155 !important; }
+        
+        .job-points { margin-top: 6px; padding-left: 18px; list-style-type: square; color: #334155 !important; }
+        .job-points li { font-size: 13.5px; line-height: 1.5; margin-bottom: 4px; }
+
+        /* CAPSULES (Compétences & Technos) */
+        .capsule-container { display: flex; flex-wrap: wrap; gap: 8px; }
+        
+        .capsule {
+          background: #f3f4f6 !important;
+          color: #374151 !important;
+          border: 1px solid #d1d5db !important;
+          padding: 4px 10px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        
+        .job-tags { margin-top: 10px; }
+
+        /* SIDEBAR ELEMENTS */
+        .edu-item { margin-bottom: 16px; }
+        .edu-degree { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.4; }
+        .edu-school { font-size: 12px; color: #3b82f6 !important; margin-top: 2px; }
+        .edu-year { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+        .lang-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13.5px; font-weight: 500; color: #334155; }
+        .lang-dots { color: #0f172a; font-size: 10px; letter-spacing: 2px; }
+
+        .editable-textarea { width: 100%; font-size: 13.5px; line-height: 1.6; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; font-family: inherit; resize: vertical; background: #f8fafc; }
+        .editable-input { font-size: 13px; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 8px; font-family: inherit; background: #f8fafc; width: calc(100% - 24px); }
+        .skill-edit-row { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+        .btn-remove-skill { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px; }
+
+        body.printing .cv-toolbar,
+        body.printing .edit-banner {
+          display: none !important;
+        }
+
+        /* IMPRESSION A4 */
+        @media print {
+          @page { size: A4; margin: 0; }
+          html, body { background: white; }
+          .cv-wrapper { padding: 0 !important; }
+          .cv-container { padding: 0; margin: 0; }
+          .cv-card {
+            width: 210mm;
+            min-height: 297mm;
+            box-shadow: none;
+            border-radius: 0;
+          }
+          .section, .job-item { page-break-inside: avoid; }
         }
       `}</style>
 
       <div className="cv-wrapper">
-        {/* TOOLBAR */}
         <div className="cv-toolbar">
           <div className="cv-toolbar-inner">
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <button className="btn-back" onClick={() => window.history.back()}>← Retour</button>
-              <span className="toolbar-brand">📄 CV Professionnel</span>
+              <button className="btn-back" onClick={() => window.history.back()}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Retour
+              </button>
+              <span className="toolbar-brand">Espace Candidature</span>
             </div>
             <div className="toolbar-actions">
-              <button className="btn-dark" onClick={toggleDarkMode}>
-                {darkMode ? "☀️" : "🌙"}
-              </button>
               {editing ? (
                 <>
                   <button className="btn-cancel" onClick={handleCancel}>Annuler</button>
-                  <button className="btn-save" onClick={handleSave}>✓ Sauvegarder</button>
+                  <button className="btn-save" onClick={handleSave}>Enregistrer</button>
                 </>
               ) : (
                 <>
-                  <button className="btn-edit" onClick={() => setEditing(true)}>✏️ Modifier</button>
-                  <button className="btn-print" onClick={() => window.print()}>🖨️ Télécharger PDF</button>
+                  <button className="btn-edit" onClick={() => setEditing(true)}>
+                    Modifier
+                  </button>
+                  <button className="btn-print" onClick={downloadPDF}>
+                    Télécharger PDF
+                  </button>
                 </>
               )}
             </div>
           </div>
           {editing && (
             <div className="edit-banner">
-              ✏️ Mode édition actif — modifiez les champs surlignés en bleu, puis cliquez sur "Sauvegarder".
+              Mode modification activé. Vos changements seront répercutés directement sur la mise en page finale.
             </div>
           )}
         </div>
 
-        {/* CV */}
         <div className="cv-container">
           <div className="cv-card">
-
-            {/* HEADER */}
             <div className="cv-head">
-              <div className="cv-head-pattern" />
               <div className="cv-head-content">
-                <div className="cv-avatar">{initials || "?"}</div>
+                <div className="cv-avatar-box">
+                  {display.picture ? (
+                    <img src={display.picture} alt="Profil" className="cv-avatar-img" />
+                  ) : (
+                    initials || "?"
+                  )}
+                </div>
                 <div className="cv-head-info">
-                  <div className="cv-head-badge">
-                    {display.experiences?.[0]?.position || "Candidat"}
-                  </div>
                   <div className="cv-head-name">
-                    {display.first_name || "Prénom"} {display.last_name || "Nom"}
+                    {display.first_name || ""} {display.last_name || ""}
+                  </div>
+                  <div className="cv-head-title">
+                    {display.experiences?.[0]?.position || "Profil Professionnel"}
                   </div>
                   <div className="cv-head-contacts">
-                    {display.email && <span className="cv-head-contact">✉ {display.email}</span>}
-                    {display.phone && <span className="cv-head-contact">✆ {display.phone}</span>}
-                    {display.city && <span className="cv-head-contact">◎ {display.city}</span>}
-                    {display.linkedin && (
+                    {display.email && (
                       <span className="cv-head-contact">
-                        <a href={display.linkedin} target="_blank">LinkedIn</a>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        {display.email}
                       </span>
                     )}
-                    {display.github && (
+                    {display.phone && (
                       <span className="cv-head-contact">
-                        <a href={display.github} target="_blank">GitHub</a>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        {display.phone}
+                      </span>
+                    )}
+                    {display.city && (
+                      <span className="cv-head-contact">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {display.city}
+                      </span>
+                    )}
+                    {display.linkedin && (
+                      <span className="cv-head-contact">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                        <a href={display.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
                       </span>
                     )}
                   </div>
@@ -660,25 +415,17 @@ export default function CVPage() {
               </div>
             </div>
 
-            {/* BODY */}
-            <div className="cv-grid">
-
-              {/* MAIN */}
+            <div className="cv-body">
               <div className="cv-main">
-
-                {/* Profil */}
                 {display.summary && (
                   <div className="section">
-                    <div className="section-head">
-                      <span className="section-dot" />
-                      À propos
-                    </div>
+                    <div className="section-head">Profil</div>
                     {editing ? (
                       <textarea
                         className="editable-textarea"
                         value={editedCv.summary}
                         onChange={(e) => updateSummary(e.target.value)}
-                        rows={4}
+                        rows={3}
                       />
                     ) : (
                       <p className="cv-summary">{display.summary}</p>
@@ -686,24 +433,20 @@ export default function CVPage() {
                   </div>
                 )}
 
-                {/* Expériences */}
                 {display.experiences?.length > 0 && (
                   <div className="section">
-                    <div className="section-head">
-                      <span className="section-dot" />
-                      Expériences Professionnelles
-                    </div>
-                    <div className="timeline">
+                    <div className="section-head">Expériences Professionnelles</div>
+                    <div>
                       {display.experiences.map((exp: any, i: number) => (
-                        <div className="timeline-item" key={i}>
-                          <span className={`timeline-dot ${i > 0 ? "past" : ""}`} />
-                          <div className="timeline-header">
-                            <div className="timeline-title">{exp.position}</div>
-                            <span className={`timeline-badge ${i > 0 ? "past" : ""}`}>
-                              {exp.start_date} — {exp.end_date || "présent"}
-                            </span>
+                        <div className="job-item" key={i}>
+                          <div className="job-header">
+                            <div className="job-title">{exp.position}</div>
+                            <div className="job-date">
+                              {exp.start_date} — {exp.end_date || "Présent"}
+                            </div>
                           </div>
-                          <div className="timeline-company">{exp.company}</div>
+                          <div className="job-company">{exp.company}</div>
+                          
                           {editing ? (
                             <textarea
                               className="editable-textarea"
@@ -712,14 +455,13 @@ export default function CVPage() {
                               rows={3}
                             />
                           ) : (
-                            exp.description && (
-                              <div className="timeline-desc">{exp.description}</div>
-                            )
+                            renderDescriptionAsPoints(exp.description)
                           )}
+
                           {exp.technologies?.length > 0 && (
-                            <div className="exp-tags">
+                            <div className="capsule-container job-tags">
                               {exp.technologies.map((tech: string, j: number) => (
-                                <span className="exp-tag" key={j}>{tech}</span>
+                                <span className="capsule" key={j}>{tech}</span>
                               ))}
                             </div>
                           )}
@@ -730,45 +472,46 @@ export default function CVPage() {
                 )}
               </div>
 
-              {/* SIDEBAR */}
               <div className="cv-sidebar">
-
-                {/* Compétences */}
                 {display.skills?.length > 0 && (
                   <div className="section">
-                    <div className="section-head">
-                      <span className="section-dot" />
-                      Compétences
+                    <div className="section-head">Compétences</div>
+                    <div className="capsule-container">
+                      {editing ? (
+                        editedCv.skills.map((skill: string, i: number) => (
+                          <div className="skill-edit-row" key={i} style={{width: '100%'}}>
+                            <input
+                              className="editable-input"
+                              value={skill}
+                              onChange={(e) => updateSkill(i, e.target.value)}
+                            />
+                            <button className="btn-remove-skill" onClick={() => removeSkill(i)}>×</button>
+                          </div>
+                        ))
+                      ) : (
+                        display.skills.map((skill: string, i: number) => (
+                          <span className="capsule" key={i}>{skill}</span>
+                        ))
+                      )}
                     </div>
-                    {editing ? (
-                      editedCv.skills.map((skill: string, i: number) => (
-                        <div className="skill-edit-row" key={i}>
-                          <input
-                            className="editable-input"
-                            value={skill}
-                            onChange={(e) => updateSkill(i, e.target.value)}
-                          />
-                          <button className="btn-remove-skill" onClick={() => removeSkill(i)}>×</button>
-                        </div>
-                      ))
-                    ) : (
-                      display.skills.map((skill: string, i: number) => (
-                        <div className="skill-item" key={i}>
-                          <span className="skill-dot" />
-                          {skill}
-                        </div>
-                      ))
-                    )}
                   </div>
                 )}
 
-                {/* Formation */}
+                {display.languages?.length > 0 && (
+                  <div className="section">
+                    <div className="section-head">Langues</div>
+                    {display.languages.map((lang: any, i: number) => (
+                      <div className="lang-item" key={i}>
+                        <span>{lang.name}</span>
+                        <span className="lang-dots">{getLanguageDots(lang.level)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {display.education?.length > 0 && (
                   <div className="section">
-                    <div className="section-head">
-                      <span className="section-dot" />
-                      Formation
-                    </div>
+                    <div className="section-head">Formation</div>
                     {display.education.map((edu: any, i: number) => (
                       <div className="edu-item" key={i}>
                         <div className="edu-degree">{edu.degree}</div>
@@ -778,44 +521,7 @@ export default function CVPage() {
                     ))}
                   </div>
                 )}
-
-                {/* Langues */}
-                {display.languages?.length > 0 && (
-                  <div className="section">
-                    <div className="section-head">
-                      <span className="section-dot" />
-                      Langues
-                    </div>
-                    {display.languages.map((lang: any, i: number) => (
-                      <div className="lang-item" key={i}>
-                        <span>{lang.name}</span>
-                        <span className="lang-badge">{lang.level}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Certifications */}
-                {display.certifications?.length > 0 && (
-                  <div className="section">
-                    <div className="section-head">
-                      <span className="section-dot" />
-                      Certifications
-                    </div>
-                    {display.certifications.map((cert: any, i: number) => (
-                      <div className="edu-item" key={i}>
-                        <div className="edu-degree">{cert.name}</div>
-                        {cert.issuer && <div className="edu-school">{cert.issuer}</div>}
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-            </div>
-
-            {/* FOOTER */}
-            <div className="cv-footer">
-              Généré par Job Coach AI — {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
             </div>
           </div>
         </div>
@@ -823,3 +529,4 @@ export default function CVPage() {
     </div>
   );
 }
+
