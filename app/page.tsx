@@ -29,7 +29,7 @@ export default function Landing() {
           <span className="text-blue-600">adaptée à chaque offre.</span>
         </h1>
         <p className="text-xl text-slate-500 leading-relaxed mb-10 max-w-2xl mx-auto">
-          Collez votre CV et l'offre d'emploi. Notre IA analyse, optimise et génère
+          Collez votre CV et l&apos;offre d&apos;emploi. Notre IA analyse, optimise et génère
           une candidature personnalisée avec score ATS, CV réécrit et lettre de motivation — en moins de 30 secondes.
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
@@ -52,7 +52,7 @@ export default function Landing() {
       <section className="bg-slate-50 py-20">
         <div className="max-w-4xl mx-auto px-8">
           <h2 className="text-3xl font-bold text-slate-900 text-center mb-12">
-            Avant / Après en un coup d'œil
+            Avant / Après en un coup d&apos;œil
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
@@ -62,9 +62,9 @@ export default function Landing() {
                 <span className="ml-auto bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">Score ATS : 42%</span>
               </div>
               <p className="text-sm text-slate-500 italic leading-relaxed">
-                "Développeur web avec 5 ans d'expérience. Maîtrise de JavaScript, React et Node.js. Passionné par les nouvelles technologies..."
+                &quot;Développeur web avec 5 ans d&apos;expérience. Maîtrise de JavaScript, React et Node.js. Passionné par les nouvelles technologies...&quot;
               </p>
-              <div className="mt-4 text-xs text-slate-400">❌ Lettre générique · ❌ Mots-clés manquants · ❌ Non adapté à l'offre</div>
+              <div className="mt-4 text-xs text-slate-400">❌ Lettre générique · ❌ Mots-clés manquants · ❌ Non adapté à l&apos;offre</div>
             </div>
             <div className="bg-white rounded-2xl p-6 border-2 border-blue-200">
               <div className="flex items-center gap-3 mb-4">
@@ -73,9 +73,9 @@ export default function Landing() {
                 <span className="ml-auto bg-green-100 text-green-600 text-xs font-bold px-3 py-1 rounded-full">Score ATS : 91%</span>
               </div>
               <p className="text-sm text-slate-700 leading-relaxed">
-                "Développeur Full Stack Senior avec 5 ans d'expérience en React, TypeScript et FastAPI. Expert en déploiement Docker et CI/CD GitHub Actions. Intégration OpenAI sur plateforme SaaS..."
+                &quot;Développeur Full Stack Senior avec 5 ans d&apos;expérience en React, TypeScript et FastAPI. Expert en déploiement Docker et CI/CD GitHub Actions. Intégration OpenAI sur plateforme SaaS...&quot;
               </p>
-              <div className="mt-4 text-xs text-green-600">✅ Lettre personnalisée · ✅ 11 mots-clés ATS · ✅ Adapté à l'offre</div>
+              <div className="mt-4 text-xs text-green-600">✅ Lettre personnalisée · ✅ 11 mots-clés ATS · ✅ Adapté à l&apos;offre</div>
             </div>
           </div>
         </div>
@@ -89,12 +89,12 @@ export default function Landing() {
           <div className="text-center">
             <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">📋</div>
             <h3 className="font-bold text-slate-800 mb-2">1. Collez votre CV</h3>
-            <p className="text-sm text-slate-500">Copiez-collez le texte de votre CV. Pas besoin d'upload.</p>
+            <p className="text-sm text-slate-500">Copiez-collez le texte de votre CV. Pas besoin d&apos;upload.</p>
           </div>
           <div className="text-center">
             <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">🎯</div>
-            <h3 className="font-bold text-slate-800 mb-2">2. Collez l'offre</h3>
-            <p className="text-sm text-slate-500">Ajoutez le texte de l'offre d'emploi ciblée.</p>
+            <h3 className="font-bold text-slate-800 mb-2">2. Collez l&apos;offre</h3>
+            <p className="text-sm text-slate-500">Ajoutez le texte de l&apos;offre d&apos;emploi ciblée.</p>
           </div>
           <div className="text-center">
             <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">✨</div>
@@ -162,7 +162,7 @@ export default function Landing() {
               <li>✓ Optimisations illimitées</li>
               <li>✓ Export PDF premium</li>
               <li>✓ Mode édition</li>
-              <li>✓ Détection d'hallucinations</li>
+              <li>✓ Détection d&apos;hallucinations</li>
               <li>✓ Historique des candidatures</li>
             </ul>
             <button
@@ -176,7 +176,7 @@ export default function Landing() {
       </section>
 
       <section className="bg-blue-600 py-20 text-center text-white">
-        <h2 className="text-3xl font-bold mb-4">Prêt à décrocher plus d'entretiens ?</h2>
+        <h2 className="text-3xl font-bold mb-4">Prêt à décrocher plus d&apos;entretiens ?</h2>
         <p className="text-blue-100 mb-8 text-lg">Rejoignez les candidats qui optimisent leur candidature en 30 secondes.</p>
         <button
           onClick={() => router.push("/app")}
@@ -188,7 +188,7 @@ export default function Landing() {
 
       <footer className="border-t border-slate-100 py-8 text-center text-slate-400 text-sm">
         <div className="font-bold text-slate-600 mb-1">Job Coach AI</div>
-        Optimisez votre candidature avec l'intelligence artificielle.
+        Optimisez votre candidature avec l&apos;intelligence artificielle.
       </footer>
 
     </main>

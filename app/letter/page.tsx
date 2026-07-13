@@ -1,239 +1,131 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Inter, Lora } from "next/font/google";
+import { useRouter } from "next/navigation";
+
+import { ApiError, exportLetterPdf } from "@/lib/api";
+import { safeGet, safeSet } from "@/lib/storage";
+import type { CV, Letter } from "@/lib/types";
+
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], display: "swap", variable: "--font-inter" });
+const lora = Lora({ subsets: ["latin"], weight: ["400", "600"], style: ["normal", "italic"], display: "swap", variable: "--font-lora" });
 
 export default function LetterPage() {
-  const [letter, setLetter] = useState<any>(null);
-  const [cv, setCv] = useState<any>(null);
+  const router = useRouter();
+  const [letter, setLetter] = useState<Letter | null>(null);
+  const [cv, setCv] = useState<CV | null>(null);
   const [editing, setEditing] = useState(false);
   const [editedBody, setEditedBody] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedLetter = localStorage.getItem("letter_result");
-    const storedCv = localStorage.getItem("cv_result");
+    // localStorage est une API navigateur : indisponible au rendu serveur, elle
+    // ne peut être lue que côté client après le montage, d'où l'effet.
+    const storedLetter = safeGet<Letter>("letter_result");
+    const storedCv = safeGet<CV>("cv_result");
     if (storedLetter) {
-      const parsed = JSON.parse(storedLetter);
-      setLetter(parsed);
-      setEditedBody(parsed.body);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLetter(storedLetter);
+      setEditedBody(storedLetter.body);
     }
-    if (storedCv) setCv(JSON.parse(storedCv));
+    if (storedCv) setCv(storedCv);
   }, []);
 
   const handleSave = () => {
+    if (!letter) return;
     const updated = { ...letter, body: editedBody };
     setLetter(updated);
-    localStorage.setItem("letter_result", JSON.stringify(updated));
+    safeSet("letter_result", updated);
     setEditing(false);
   };
 
-  if (!letter) return (
-    <div className="flex items-center justify-center min-h-screen text-slate-400">
-      Aucune lettre à afficher. Retournez à l'accueil.
-    </div>
-  );
+  const handleDownload = async () => {
+    if (!letter) return;
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      await exportLetterPdf(letter, {
+        first_name: cv?.first_name,
+        last_name: cv?.last_name,
+        email: cv?.email,
+        phone: cv?.phone,
+        city: cv?.city,
+        linkedin: cv?.linkedin,
+      });
+    } catch (err) {
+      setDownloadError(err instanceof ApiError ? err.message : "Erreur lors du téléchargement du PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
-  const today = new Date().toLocaleDateString("fr-FR", {
-    day: "numeric", month: "long", year: "numeric"
-  });
+  if (!letter) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-slate-400 text-center px-6">
+        Aucune lettre à afficher. Retournez à l&apos;accueil pour lancer une optimisation.
+      </div>
+    );
+  }
+
+  const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <>
+    <div className={`${inter.variable} ${lora.variable}`}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #f1f5f9; font-family: 'Lora', Georgia, serif; }
+        body { background: #f1f5f9; font-family: var(--font-lora), Georgia, serif; }
 
-        .page-wrapper {
-          min-height: 100vh;
-          padding: 40px 20px;
-          background: #f1f5f9;
-        }
+        .page-wrapper { min-height: 100vh; padding: 40px 20px; background: #f1f5f9; }
 
-        .toolbar {
-          max-width: 720px;
-          margin: 0 auto 24px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 12px;
-        }
+        .toolbar { max-width: 720px; margin: 0 auto 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-family: var(--font-inter), sans-serif; }
+        .toolbar-right { display: flex; gap: 10px; }
 
-        .toolbar-right {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-        }
+        .btn-back { background: none; border: none; color: #64748b; font-size: 14px; cursor: pointer; }
+        .btn-edit, .btn-print, .btn-save, .btn-cancel { padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 13.5px; cursor: pointer; border: none; }
+        .btn-edit { background: white; color: #1e3a8a; border: 1.5px solid #1e3a8a; }
+        .btn-print { background: #1e3a8a; color: white; }
+        .btn-print:disabled { background: #94a3b8; cursor: not-allowed; }
+        .btn-save { background: #16a34a; color: white; }
+        .btn-cancel { background: white; color: #4b5563; border: 1.5px solid #d1d5db; }
 
-        .btn-print {
-          background: #1e40af;
-          color: white;
-          border: none;
-          padding: 10px 24px;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 14px;
-          cursor: pointer;
-          font-family: 'Inter', sans-serif;
-        }
+        .download-error { max-width: 720px; margin: 0 auto 16px; padding: 12px 20px; background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; font-size: 14px; color: #b91c1c; font-family: var(--font-inter), sans-serif; }
 
-        .btn-edit {
-          background: white;
-          color: #1e40af;
-          border: 1.5px solid #1e40af;
-          padding: 9px 20px;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 14px;
-          cursor: pointer;
-          font-family: 'Inter', sans-serif;
-        }
+        .letter-page { max-width: 720px; margin: 0 auto; background: white; box-shadow: 0 10px 35px rgba(0,0,0,.08); padding: 56px 60px; position: relative; }
+        .letter-accent { position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: #1e3a8a; }
 
-        .btn-save {
-          background: #16a34a;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 14px;
-          cursor: pointer;
-          font-family: 'Inter', sans-serif;
-        }
+        .letter-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; gap: 16px; flex-wrap: wrap; font-family: var(--font-inter), sans-serif; }
+        .sender-name { font-weight: 700; font-size: 16px; color: #0f172a; margin-bottom: 4px; }
+        .sender-info { font-size: 12.5px; color: #64748b; line-height: 1.6; }
+        .letter-date { font-size: 13px; color: #64748b; }
 
-        .btn-cancel {
-          background: white;
-          color: #64748b;
-          border: 1.5px solid #e2e8f0;
-          padding: 9px 16px;
-          border-radius: 8px;
-          font-weight: 500;
-          font-size: 14px;
-          cursor: pointer;
-          font-family: 'Inter', sans-serif;
-        }
+        .letter-subject { font-family: var(--font-inter), sans-serif; font-weight: 600; font-size: 14px; color: #0f172a; margin-bottom: 28px; padding-bottom: 14px; border-bottom: 1px solid #e2e8f0; }
+        .letter-subject span { font-weight: 400; color: #334155; }
 
-        .btn-back {
-          color: #64748b;
-          font-size: 14px;
-          cursor: pointer;
-          background: none;
-          border: none;
-          font-family: 'Inter', sans-serif;
-        }
+        .letter-body { white-space: pre-wrap; font-size: 15px; line-height: 1.8; color: #1f2937; }
+        .letter-body-edit { width: 100%; min-height: 400px; font-family: var(--font-lora), Georgia, serif; font-size: 15px; line-height: 1.8; color: #1f2937; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; resize: vertical; }
+        .edit-hint { font-family: var(--font-inter), sans-serif; font-size: 13px; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; }
 
-        .letter-page {
-          width: 720px;
-          max-width: 100%;
-          margin: 0 auto;
-          background: white;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-          border-radius: 4px;
-          padding: 64px 72px;
-        }
-
-        .letter-accent {
-          width: 40px;
-          height: 3px;
-          background: #1e40af;
-          margin-bottom: 40px;
-        }
-
-        .letter-header {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 48px;
-          align-items: flex-start;
-        }
-
-        .letter-sender {
-          font-family: 'Inter', sans-serif;
-        }
-
-        .sender-name {
-          font-size: 17px;
-          font-weight: 600;
-          color: #0f172a;
-          margin-bottom: 5px;
-        }
-
-        .sender-info {
-          font-size: 12px;
-          color: #64748b;
-          line-height: 1.7;
-        }
-
-        .letter-date {
-          font-size: 13px;
-          color: #64748b;
-          font-family: 'Inter', sans-serif;
-          text-align: right;
-        }
-
-        .letter-subject {
-          font-family: 'Inter', sans-serif;
-          font-size: 13px;
-          font-weight: 600;
-          color: #0f172a;
-          margin-bottom: 28px;
-          padding-bottom: 14px;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .letter-subject span {
-          color: #1e40af;
-        }
-
-        .letter-body {
-          font-size: 14px;
-          line-height: 1.85;
-          color: #1e293b;
-          white-space: pre-wrap;
-        }
-
-        .letter-body-edit {
-          font-size: 14px;
-          line-height: 1.85;
-          color: #1e293b;
-          width: 100%;
-          min-height: 400px;
-          border: 1.5px solid #3b82f6;
-          border-radius: 8px;
-          padding: 16px;
-          font-family: 'Lora', Georgia, serif;
-          resize: vertical;
-          outline: none;
-          background: #f8fafc;
-        }
-
-        .edit-hint {
-          font-family: 'Inter', sans-serif;
-          font-size: 12px;
-          color: #3b82f6;
-          margin-bottom: 12px;
-          font-style: italic;
+        @media (max-width: 800px) {
+          .letter-page { padding: 32px 24px; }
         }
 
         @media print {
-          body { background: white; }
+          @page { size: A4; margin: 20mm; }
+          html, body { background: white; }
+          .toolbar, .download-error { display: none !important; }
           .page-wrapper { padding: 0; background: white; }
-          .toolbar { display: none; }
-          .letter-page {
-            box-shadow: none;
-            border-radius: 0;
-            width: 100%;
-            padding: 56px 64px;
-          }
-          @page {
-            margin: 0;
-            size: A4;
-          }
+          .letter-page { box-shadow: none; max-width: 100%; padding: 0; }
+          .letter-accent { display: none; }
         }
       `}</style>
 
       <div className="page-wrapper">
         <div className="toolbar">
-          <button className="btn-back" onClick={() => window.history.back()}>← Retour</button>
+          <button className="btn-back" onClick={() => router.push("/app")}>
+            ← Retour
+          </button>
           <div className="toolbar-right">
             {editing ? (
               <>
@@ -249,13 +141,19 @@ export default function LetterPage() {
                 <button className="btn-edit" onClick={() => setEditing(true)}>
                   ✏️ Modifier
                 </button>
-                <button className="btn-print" onClick={() => window.print()}>
-                  Télécharger en PDF
+                <button className="btn-print" onClick={handleDownload} disabled={downloading}>
+                  {downloading ? "Génération..." : "Télécharger en PDF"}
                 </button>
               </>
             )}
           </div>
         </div>
+
+        {downloadError && (
+          <div className="download-error" role="alert">
+            {downloadError}
+          </div>
+        )}
 
         <div className="letter-page">
           <div className="letter-accent"></div>
@@ -266,9 +164,24 @@ export default function LetterPage() {
                 {cv?.first_name || ""} {cv?.last_name || ""}
               </div>
               <div className="sender-info">
-                {cv?.email && <>{cv.email}<br /></>}
-                {cv?.phone && <>{cv.phone}<br /></>}
-                {cv?.city && <>{cv.city}<br /></>}
+                {cv?.email && (
+                  <>
+                    {cv.email}
+                    <br />
+                  </>
+                )}
+                {cv?.phone && (
+                  <>
+                    {cv.phone}
+                    <br />
+                  </>
+                )}
+                {cv?.city && (
+                  <>
+                    {cv.city}
+                    <br />
+                  </>
+                )}
                 {cv?.linkedin && <>{cv.linkedin}</>}
               </div>
             </div>
@@ -283,18 +196,14 @@ export default function LetterPage() {
 
           {editing ? (
             <>
-              <p className="edit-hint">Modifiez le texte directement ci-dessous, puis cliquez sur "Sauvegarder".</p>
-              <textarea
-                className="letter-body-edit"
-                value={editedBody}
-                onChange={(e) => setEditedBody(e.target.value)}
-              />
+              <p className="edit-hint">Modifiez le texte directement ci-dessous, puis cliquez sur &quot;Sauvegarder&quot;.</p>
+              <textarea className="letter-body-edit" value={editedBody} onChange={(e) => setEditedBody(e.target.value)} />
             </>
           ) : (
             <div className="letter-body">{letter.body}</div>
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
