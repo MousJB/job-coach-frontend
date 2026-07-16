@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import LanguageToggle from "@/components/LanguageToggle";
 import OptimizeForm from "@/components/OptimizeForm";
 import ResultsPanel from "@/components/ResultsPanel";
 import { ApiError, streamOptimize } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 import { safeGet, safeRemove, safeSet } from "@/lib/storage";
 import { PIPELINE_STEPS, type PipelineEvent, type PipelineStepKey, type Report } from "@/lib/types";
 
@@ -14,6 +16,7 @@ interface DraftTexts {
 }
 
 export default function Home() {
+  const { lang, t } = useLanguage();
   const [cvText, setCvText] = useState("");
   const [jobText, setJobText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,27 +27,32 @@ export default function Home() {
 
   const isSubmittingRef = useRef(false);
 
-  // Restaure les derniers résultats / textes saisis : évite de perdre le
-  // travail en cours quand on revient depuis /cv ou /letter (le composant
-  // est remonté à neuf par la navigation, l'état React seul ne suffit pas).
+  const reportKey = `last_report_${lang}`;
+  const draftKey = `draft_texts_${lang}`;
+
+  // Restaure les derniers résultats / textes saisis pour la langue courante :
+  // évite de perdre le travail en cours quand on revient depuis /cv ou /letter
+  // (le composant est remonté à neuf par la navigation, l'état React seul ne
+  // suffit pas). Namespacé par langue pour ne pas mélanger FR et EN.
   useEffect(() => {
-    const lastReport = safeGet<Report>("last_report");
+    const lastReport = safeGet<Report>(reportKey);
     if (lastReport) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setReport(lastReport);
       return;
     }
-    const draft = safeGet<DraftTexts>("draft_texts");
+    const draft = safeGet<DraftTexts>(draftKey);
     if (draft) {
       setCvText(draft.cvText);
       setJobText(draft.jobText);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   useEffect(() => {
     if (report) return;
-    safeSet("draft_texts", { cvText, jobText });
-  }, [cvText, jobText, report]);
+    safeSet(draftKey, { cvText, jobText });
+  }, [cvText, jobText, report, draftKey]);
 
   const handleOptimize = async () => {
     if (isSubmittingRef.current) return;
@@ -60,6 +68,7 @@ export default function Home() {
 
     try {
       const finalReport = await streamOptimize(cvText, jobText, {
+        language: lang,
         onEvent: (event: PipelineEvent) => {
           if (event.step === "error") {
             // L'étape qui a échoué est la suivante après la dernière terminée avec succès.
@@ -73,8 +82,8 @@ export default function Home() {
         },
       });
       setReport(finalReport);
-      safeSet("last_report", finalReport);
-      safeRemove("draft_texts");
+      safeSet(reportKey, finalReport);
+      safeRemove(draftKey);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : "Erreur lors de l'optimisation.";
       setError(message);
@@ -91,18 +100,21 @@ export default function Home() {
     setErrorStep(null);
     setCvText("");
     setJobText("");
-    safeRemove("last_report");
-    safeRemove("draft_texts");
+    safeRemove(reportKey);
+    safeRemove(draftKey);
   };
 
   return (
     <main className="min-h-screen bg-slate-50 p-8 font-sans">
       <div className="max-w-6xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <LanguageToggle />
+        </div>
         <header className="mb-12 text-center">
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
             Job Coach <span className="text-blue-600">AI</span> 🚀
           </h1>
-          <p className="text-slate-500 mt-2 text-lg">Adaptez votre candidature en quelques instants.</p>
+          <p className="text-slate-500 mt-2 text-lg">{t("header.tagline")}</p>
         </header>
 
         {!report && (

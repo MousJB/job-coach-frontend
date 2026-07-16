@@ -1,3 +1,4 @@
+import type { Lang } from "./i18n";
 import type { CV, Letter, LetterSender, PipelineEvent, Report } from "./types";
 
 export class ApiError extends Error {
@@ -30,6 +31,7 @@ interface StreamOptimizeOptions {
   onEvent?: (event: PipelineEvent) => void;
   signal?: AbortSignal;
   timeoutMs?: number;
+  language?: Lang;
 }
 
 function buildFileName(...parts: (string | null | undefined)[]): string {
@@ -96,7 +98,7 @@ export async function streamOptimize(
     response = await fetch(`${API_BASE_URL}/optimize/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cv_text: cvText, job_text: jobText }),
+      body: JSON.stringify({ cv_text: cvText, job_text: jobText, language: options.language ?? "fr" }),
       signal: controller.signal,
     });
   } catch {

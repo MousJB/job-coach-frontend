@@ -119,15 +119,27 @@ export const PIPELINE_STEPS = [
 
 export type PipelineStepKey = (typeof PIPELINE_STEPS)[number];
 
-export const STEP_LABELS: Record<PipelineStepKey, string> = {
-  extract_cv: "Analyse du CV",
-  cv_analysis: "Évaluation du profil",
-  analyze_job: "Analyse de l'offre d'emploi",
-  matching: "Calcul du score de compatibilité",
-  strategy: "Définition de la stratégie",
-  cv_rewrite: "Réécriture du CV",
-  cover_letter: "Rédaction de la lettre de motivation",
-  quality_check: "Contrôle qualité",
+export const STEP_LABELS: Record<"fr" | "en", Record<PipelineStepKey, string>> = {
+  fr: {
+    extract_cv: "Analyse du CV",
+    cv_analysis: "Évaluation du profil",
+    analyze_job: "Analyse de l'offre d'emploi",
+    matching: "Calcul du score de compatibilité",
+    strategy: "Définition de la stratégie",
+    cv_rewrite: "Réécriture du CV",
+    cover_letter: "Rédaction de la lettre de motivation",
+    quality_check: "Contrôle qualité",
+  },
+  en: {
+    extract_cv: "Analyzing resume",
+    cv_analysis: "Assessing profile",
+    analyze_job: "Analyzing job posting",
+    matching: "Computing compatibility score",
+    strategy: "Defining strategy",
+    cv_rewrite: "Rewriting resume",
+    cover_letter: "Writing cover letter",
+    quality_check: "Quality check",
+  },
 };
 
 export interface PipelineEvent {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/lib/i18n";
 import { PIPELINE_STEPS, STEP_LABELS, type PipelineStepKey } from "@/lib/types";
 
 interface ProgressStepsProps {
@@ -8,11 +9,17 @@ interface ProgressStepsProps {
 }
 
 export default function ProgressSteps({ completedSteps, errorStep }: ProgressStepsProps) {
+  const { lang } = useLanguage();
   const completedSet = new Set(completedSteps);
   const currentIndex = completedSteps.length;
+  const labels = STEP_LABELS[lang];
 
   return (
-    <ul className="space-y-3" aria-live="polite" aria-label="Progression de l'optimisation">
+    <ul
+      className="space-y-3"
+      aria-live="polite"
+      aria-label={lang === "en" ? "Optimization progress" : "Progression de l'optimisation"}
+    >
       {PIPELINE_STEPS.map((step, index) => {
         const isDone = completedSet.has(step);
         const isError = errorStep === step;
@@ -42,7 +49,7 @@ export default function ProgressSteps({ completedSteps, errorStep }: ProgressSte
             >
               {isError ? "!" : isDone ? "✓" : index + 1}
             </span>
-            <span className={labelClass}>{STEP_LABELS[step as PipelineStepKey]}</span>
+            <span className={labelClass}>{labels[step]}</span>
           </li>
         );
       })}

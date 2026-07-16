@@ -1,6 +1,7 @@
 "use client";
 
 import ProgressSteps from "./ProgressSteps";
+import { useLanguage } from "@/lib/i18n";
 import type { PipelineStepKey } from "@/lib/types";
 
 const MAX_LENGTH = 20000;
@@ -31,6 +32,7 @@ export default function OptimizeForm({
   completedSteps,
   errorStep,
 }: OptimizeFormProps) {
+  const { t } = useLanguage();
   const tooShort = cvText.length > 0 && cvText.length < MIN_LENGTH;
   const jobTooShort = jobText.length > 0 && jobText.length < MIN_LENGTH;
   const canSubmit = !loading && cvText.length >= MIN_LENGTH && jobText.length >= MIN_LENGTH;
@@ -39,7 +41,7 @@ export default function OptimizeForm({
     <div className="grid md:grid-cols-2 gap-8">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <label htmlFor="cv-text" className="block text-sm font-semibold text-slate-700 mb-2">
-          1. Collez votre CV
+          {t("form.cvLabel")}
         </label>
         <textarea
           id="cv-text"
@@ -48,10 +50,10 @@ export default function OptimizeForm({
           onChange={(e) => onCvTextChange(e.target.value)}
           maxLength={MAX_LENGTH}
           disabled={loading}
-          placeholder="Copiez-collez le texte intégral de votre CV ici..."
+          placeholder={t("form.cvPlaceholder")}
         />
         <div className="mt-1 flex justify-between text-xs">
-          <span className="text-orange-500">{tooShort ? "Encore un peu court pour une bonne analyse." : ""}</span>
+          <span className="text-orange-500">{tooShort ? t("form.tooShort") : ""}</span>
           <span className="text-slate-400">
             {cvText.length} / {MAX_LENGTH}
           </span>
@@ -59,7 +61,7 @@ export default function OptimizeForm({
       </div>
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <label htmlFor="job-text" className="block text-sm font-semibold text-slate-700 mb-2">
-          2. Collez l&apos;offre d&apos;emploi
+          {t("form.jobLabel")}
         </label>
         <textarea
           id="job-text"
@@ -68,10 +70,10 @@ export default function OptimizeForm({
           onChange={(e) => onJobTextChange(e.target.value)}
           maxLength={MAX_LENGTH}
           disabled={loading}
-          placeholder="Copiez-collez le texte de l'offre d'emploi ici..."
+          placeholder={t("form.jobPlaceholder")}
         />
         <div className="mt-1 flex justify-between text-xs">
-          <span className="text-orange-500">{jobTooShort ? "Encore un peu court pour une bonne analyse." : ""}</span>
+          <span className="text-orange-500">{jobTooShort ? t("form.tooShort") : ""}</span>
           <span className="text-slate-400">
             {jobText.length} / {MAX_LENGTH}
           </span>
@@ -85,13 +87,13 @@ export default function OptimizeForm({
             disabled={!canSubmit}
             className="bg-blue-600 text-white font-bold py-4 px-10 rounded-xl hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20"
           >
-            Optimiser ma candidature ✨
+            {t("form.submit")}
           </button>
         )}
 
         {loading && (
           <div className="max-w-sm mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left">
-            <p className="text-center text-sm font-semibold text-slate-700 mb-4">Optimisation en cours...</p>
+            <p className="text-center text-sm font-semibold text-slate-700 mb-4">{t("form.loading")}</p>
             <ProgressSteps completedSteps={completedSteps} errorStep={errorStep} />
           </div>
         )}
@@ -103,7 +105,7 @@ export default function OptimizeForm({
               onClick={onRetry}
               className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-800 underline"
             >
-              Réessayer
+              {t("form.retry")}
             </button>
           </div>
         )}

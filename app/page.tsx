@@ -13,12 +13,20 @@ export default function Landing() {
         <div className="text-xl font-extrabold text-slate-900">
           Job Coach <span className="text-blue-600">AI</span>
         </div>
-        <button
-          onClick={() => router.push("/app")}
-          className="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-        >
-          Essayer gratuitement
-        </button>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/en"
+            className="text-xs font-semibold text-slate-400 hover:text-slate-600 border border-slate-200 rounded-full px-2.5 py-1"
+          >
+            EN
+          </Link>
+          <button
+            onClick={() => router.push("/app")}
+            className="bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+          >
+            Essayer gratuitement
+          </button>
+        </div>
       </nav>
 
       <section className="max-w-4xl mx-auto px-8 pt-24 pb-20 text-center">

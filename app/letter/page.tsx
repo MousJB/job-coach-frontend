@@ -5,6 +5,7 @@ import { Inter, Lora } from "next/font/google";
 import { useRouter } from "next/navigation";
 
 import { ApiError, exportLetterPdf } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 import { safeGet, safeSet } from "@/lib/storage";
 import type { CV, Letter } from "@/lib/types";
 
@@ -13,6 +14,7 @@ const lora = Lora({ subsets: ["latin"], weight: ["400", "600"], style: ["normal"
 
 export default function LetterPage() {
   const router = useRouter();
+  const { lang, t } = useLanguage();
   const [letter, setLetter] = useState<Letter | null>(null);
   const [cv, setCv] = useState<CV | null>(null);
   const [editing, setEditing] = useState(false);
@@ -55,7 +57,7 @@ export default function LetterPage() {
         linkedin: cv?.linkedin,
       });
     } catch (err) {
-      setDownloadError(err instanceof ApiError ? err.message : "Erreur lors du téléchargement du PDF.");
+      setDownloadError(err instanceof ApiError ? err.message : t("doc.downloadError"));
     } finally {
       setDownloading(false);
     }
@@ -64,12 +66,16 @@ export default function LetterPage() {
   if (!letter) {
     return (
       <div className="flex items-center justify-center min-h-screen text-slate-400 text-center px-6">
-        Aucune lettre à afficher. Retournez à l&apos;accueil pour lancer une optimisation.
+        {t("doc.noLetter")}
       </div>
     );
   }
 
-  const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString(lang === "en" ? "en-US" : "fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className={`${inter.variable} ${lora.variable}`}>
@@ -124,25 +130,25 @@ export default function LetterPage() {
       <div className="page-wrapper">
         <div className="toolbar">
           <button className="btn-back" onClick={() => router.push("/app")}>
-            ← Retour
+            ← {t("doc.back")}
           </button>
           <div className="toolbar-right">
             {editing ? (
               <>
                 <button className="btn-cancel" onClick={() => { setEditedBody(letter.body); setEditing(false); }}>
-                  Annuler
+                  {t("doc.cancel")}
                 </button>
                 <button className="btn-save" onClick={handleSave}>
-                  ✓ Sauvegarder
+                  ✓ {t("doc.save")}
                 </button>
               </>
             ) : (
               <>
                 <button className="btn-edit" onClick={() => setEditing(true)}>
-                  ✏️ Modifier
+                  ✏️ {t("doc.edit")}
                 </button>
                 <button className="btn-print" onClick={handleDownload} disabled={downloading}>
-                  {downloading ? "Génération..." : "Télécharger en PDF"}
+                  {downloading ? t("doc.downloading") : t("doc.download")}
                 </button>
               </>
             )}
@@ -190,13 +196,13 @@ export default function LetterPage() {
 
           {letter.subject && (
             <div className="letter-subject">
-              Objet : <span>{letter.subject}</span>
+              {t("doc.subjectLabel")} <span>{letter.subject}</span>
             </div>
           )}
 
           {editing ? (
             <>
-              <p className="edit-hint">Modifiez le texte directement ci-dessous, puis cliquez sur &quot;Sauvegarder&quot;.</p>
+              <p className="edit-hint">{t("doc.editHint")}</p>
               <textarea className="letter-body-edit" value={editedBody} onChange={(e) => setEditedBody(e.target.value)} />
             </>
           ) : (

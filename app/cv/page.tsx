@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import { useRouter } from "next/navigation";
 
 import { ApiError, exportCvPdf } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 import { safeGet, safeSet } from "@/lib/storage";
 import type { CV, Experience } from "@/lib/types";
 
@@ -24,6 +25,7 @@ const getLanguageDots = (level: string | null) => {
 
 export default function CVPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [cv, setCv] = useState<CV | null>(null);
   const [editing, setEditing] = useState(false);
   const [editedCv, setEditedCv] = useState<CV | null>(null);
@@ -60,7 +62,7 @@ export default function CVPage() {
     try {
       await exportCvPdf(cv);
     } catch (err) {
-      setDownloadError(err instanceof ApiError ? err.message : "Erreur lors du téléchargement du PDF.");
+      setDownloadError(err instanceof ApiError ? err.message : t("doc.downloadError"));
     } finally {
       setDownloading(false);
     }
@@ -90,7 +92,7 @@ export default function CVPage() {
   if (!cv || !editedCv) {
     return (
       <div className="flex items-center justify-center min-h-screen text-slate-400 text-center px-6">
-        Aucun CV à afficher. Retournez à l&apos;accueil pour lancer une optimisation.
+        {t("doc.noCv")}
       </div>
     );
   }
@@ -222,37 +224,33 @@ export default function CVPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
-                Retour
+                {t("doc.back")}
               </button>
-              <span className="toolbar-brand">Espace Candidature</span>
+              <span className="toolbar-brand">{t("doc.toolbarBrand")}</span>
             </div>
             <div className="toolbar-actions">
               {editing ? (
                 <>
                   <button className="btn-cancel" onClick={handleCancel}>
-                    Annuler
+                    {t("doc.cancel")}
                   </button>
                   <button className="btn-save" onClick={handleSave}>
-                    Enregistrer
+                    {t("doc.save")}
                   </button>
                 </>
               ) : (
                 <>
                   <button className="btn-edit" onClick={() => setEditing(true)}>
-                    Modifier
+                    {t("doc.edit")}
                   </button>
                   <button className="btn-print" onClick={handleDownload} disabled={downloading}>
-                    {downloading ? "Génération..." : "Télécharger PDF"}
+                    {downloading ? t("doc.downloading") : t("doc.download")}
                   </button>
                 </>
               )}
             </div>
           </div>
-          {editing && (
-            <div className="edit-banner">
-              Mode modification activé. Vos changements seront répercutés directement sur le PDF téléchargé.
-            </div>
-          )}
+          {editing && <div className="edit-banner">{t("doc.editBanner")}</div>}
         </div>
 
         {downloadError && (
@@ -270,7 +268,9 @@ export default function CVPage() {
                   <div className="cv-head-name">
                     {display.first_name || ""} {display.last_name || ""}
                   </div>
-                  <div className="cv-head-title">{display.experiences?.[0]?.position || "Profil Professionnel"}</div>
+                  <div className="cv-head-title">
+                    {display.experiences?.[0]?.position || t("doc.professionalProfileFallback")}
+                  </div>
                   <div className="cv-head-contacts">
                     {display.email && <span className="cv-head-contact">{display.email}</span>}
                     {display.phone && <span className="cv-head-contact">{display.phone}</span>}
@@ -291,7 +291,7 @@ export default function CVPage() {
               <div className="cv-main">
                 {display.summary && (
                   <div className="section">
-                    <div className="section-head">Profil</div>
+                    <div className="section-head">{t("doc.profile")}</div>
                     {editing ? (
                       <textarea
                         className="editable-textarea"
@@ -307,14 +307,14 @@ export default function CVPage() {
 
                 {display.experiences?.length > 0 && (
                   <div className="section">
-                    <div className="section-head">Expériences Professionnelles</div>
+                    <div className="section-head">{t("doc.experience")}</div>
                     <div>
                       {display.experiences.map((exp: Experience, i: number) => (
                         <div className="job-item" key={i}>
                           <div className="job-header">
                             <div className="job-title">{exp.position}</div>
                             <div className="job-date">
-                              {exp.start_date} — {exp.end_date || "Présent"}
+                              {exp.start_date} — {exp.end_date || t("doc.present")}
                             </div>
                           </div>
                           <div className="job-company">{exp.company}</div>
@@ -349,7 +349,7 @@ export default function CVPage() {
               <div className="cv-sidebar">
                 {display.skills?.length > 0 && (
                   <div className="section">
-                    <div className="section-head">Compétences</div>
+                    <div className="section-head">{t("doc.skills")}</div>
                     <div className="capsule-container">
                       {editing
                         ? editedCv.skills.map((skill, i) => (
@@ -359,7 +359,11 @@ export default function CVPage() {
                                 value={skill}
                                 onChange={(e) => updateSkill(i, e.target.value)}
                               />
-                              <button className="btn-remove-skill" onClick={() => removeSkill(i)} aria-label={`Retirer ${skill}`}>
+                              <button
+                                className="btn-remove-skill"
+                                onClick={() => removeSkill(i)}
+                                aria-label={`${t("doc.removeSkill")} ${skill}`}
+                              >
                                 ×
                               </button>
                             </div>
@@ -375,7 +379,7 @@ export default function CVPage() {
 
                 {display.languages?.length > 0 && (
                   <div className="section">
-                    <div className="section-head">Langues</div>
+                    <div className="section-head">{t("doc.languages")}</div>
                     {display.languages.map((lang, i) => (
                       <div className="lang-item" key={i}>
                         <span>{lang.name}</span>
@@ -387,7 +391,7 @@ export default function CVPage() {
 
                 {display.education?.length > 0 && (
                   <div className="section">
-                    <div className="section-head">Formation</div>
+                    <div className="section-head">{t("doc.education")}</div>
                     {display.education.map((edu, i) => (
                       <div className="edu-item" key={i}>
                         <div className="edu-degree">{edu.degree}</div>
