@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function Landing() {
@@ -189,6 +190,17 @@ export default function Landing() {
       <footer className="border-t border-slate-100 py-8 text-center text-slate-400 text-sm">
         <div className="font-bold text-slate-600 mb-1">Job Coach AI</div>
         Optimisez votre candidature avec l&apos;intelligence artificielle.
+        <div className="mt-3 flex justify-center gap-4 text-xs">
+          <Link href="/mentions-legales" className="hover:text-slate-600">
+            Mentions légales
+          </Link>
+          <Link href="/confidentialite" className="hover:text-slate-600">
+            Confidentialité
+          </Link>
+          <Link href="/cgu" className="hover:text-slate-600">
+            CGU
+          </Link>
+        </div>
       </footer>
 
     </main>
